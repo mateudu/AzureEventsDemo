@@ -1,0 +1,15 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "location": {
+            "value": "westeurope"
+        },
+        "webhookUrl": {
+            "value": "https://devg19we1fap.azurewebsites.net/api/ProcessMessage?code=0L3qUzvZIiMYPMV2zMVpCpfk8UQI0tk858FakPx6gV4q5DXBqPX0Bw=="
+        },
+        "eventGridSubscriptionName": {
+            "value": "subscription-events"
+        }
+    }
+}

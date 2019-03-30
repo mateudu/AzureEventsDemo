@@ -1,0 +1,164 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "location": {
+            "type": "string",
+            "metadata": {
+                "description": "The region where resources are deployed"
+            },
+            "defaultValue": "[resourceGroup().location]"
+        },
+        "functionAppName": {
+            "type": "string",
+            "metadata": {
+                "description": "Name of Logic App"
+            }
+        },
+        "storageAccountName": {
+            "type": "string",
+            "metadata": {
+                "description": "Storage Account name"
+            }
+        },
+        "storageAccountType": {
+            "type": "string",
+            "defaultValue": "Standard_LRS",
+            "allowedValues": [
+                "Standard_LRS",
+                "Standard_GRS",
+                "Standard_RAGRS"
+            ],
+            "metadata": {
+                "description": "Storage Account type"
+            }
+        },
+        "hostingPlanName": {
+            "type": "string",
+            "metadata": {
+                "description": "App Service Plan name"
+            }
+        },
+        "applicationInsightsName": {
+            "type": "string",
+            "metadata": {
+                "description": "Application Insights name"
+            }
+        }
+    },
+    "variables": {
+        "functionApp": {
+            "name": "[parameters('functionAppName')]",
+            "resourceId": "[resourceId('Microsoft.Web/sites', parameters('functionAppName'))]",
+            "location": "[parameters('location')]"
+        },
+        "hostingPlan": {
+            "name": "[parameters('hostingPlanName')]",
+            "resourceId": "[resourceId('Microsoft.Web/serverfarms', parameters('hostingPlanName'))]",
+            "location": "[parameters('location')]"
+        },
+        "storageAccount": {
+            "name": "[parameters('storageAccountName')]",
+            "resourceId": "[concat(resourceGroup().id,'/providers/','Microsoft.Storage/storageAccounts/', parameters('storageAccountName'))]",
+            "location": "[parameters('location')]",
+            "type": "[parameters('storageAccountType')]"
+        },
+        "applicationInsights": {
+            "name": "[parameters('applicationInsightsName')]",
+            "resourceId": "[concat(resourceGroup().id,'/providers/','Microsoft.Storage/storageAccounts/', parameters('applicationInsightsName'))]",
+            "location": "[parameters('location')]"
+        }
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Storage/storageAccounts",
+            "name": "[variables('storageAccount').name]",
+            "apiVersion": "2016-12-01",
+            "location": "[variables('storageAccount').location]",
+            "kind": "Storage",
+            "sku": {
+                "name": "[variables('storageAccount').type]"
+            }
+        },
+        {
+            "type": "Microsoft.Web/serverfarms",
+            "apiVersion": "2015-04-01",
+            "name": "[variables('hostingPlan').name]",
+            "location": "[variables('hostingPlan').location]",
+            "properties": {
+                "name": "[variables('hostingPlan').name]",
+                "computeMode": "Dynamic",
+                "sku": "Dynamic"
+            }
+        },
+        {
+            "apiVersion": "2016-03-01",
+            "type": "Microsoft.Web/sites",
+            "name": "[variables('functionApp').name]",
+            "location": "[variables('functionApp').location]",
+            "kind": "functionapp",
+            "identity": {
+                "type": "SystemAssigned"
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/serverfarms', variables('hostingPlan').name)]",
+                "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccount').name)]"
+            ],
+            "properties": {
+                "name": "[variables('functionApp').name]",
+                "siteConfig": {
+                    "appSettings": [
+                        {
+                            "name": "AzureWebJobsDashboard",
+                            "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageAccount').name, ';AccountKey=', listKeys(variables('storageAccount').resourceId,'2015-05-01-preview').key1)]"
+                        },
+                        {
+                            "name": "AzureWebJobsStorage",
+                            "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageAccount').name, ';AccountKey=', listKeys(variables('storageAccount').resourceId,'2015-05-01-preview').key1)]"
+                        },
+                        {
+                            "name": "FUNCTIONS_WORKER_RUNTIME",
+                            "value": "dotnet"
+                        },
+                        {
+                            "name": "FUNCTIONS_EXTENSION_VERSION",
+                            "value": "~2"
+                        },
+                        {
+                            "name": "WEBSITE_NODE_DEFAULT_VERSION",
+                            "value": "10.14.1"
+                        },
+                        {
+                            "name": "MSDEPLOY_RENAME_LOCKED_FILES",
+                            "value": "1"
+                        },
+                        {
+                            "name": "AzureWebJobsSecretStorageType",
+                            "value": "disabled"
+                        },
+                        {
+                            "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
+                            "value": "[reference(resourceId('microsoft.insights/components/', variables('applicationInsights').name), '2015-05-01').InstrumentationKey]"
+                        }
+                    ]
+                },
+                "clientAffinityEnabled": false,
+                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('hostingPlan').name)]"
+            }
+        },
+        {
+            "apiVersion": "2018-05-01-preview",
+            "name": "[variables('applicationInsights').name]",
+            "type": "microsoft.insights/components",
+            "location": "[variables('applicationInsights').location]",
+            "tags": {
+                "[concat('hidden-link:', resourceGroup().id, '/providers/Microsoft.Web/sites/', variables('applicationInsights').name)]": "Resource"
+            },
+            "properties": {
+                "ApplicationId": "[variables('applicationInsights').name]",
+                "Request_Source": "IbizaWebAppExtensionCreate"
+            }
+        }
+    ],
+    "outputs": {}
+}

@@ -1,0 +1,58 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
+    "contentVersion": "1.0.0.1",
+    "parameters": {
+        "location": {
+            "type": "string",
+            "metadata": {
+                "description": "The region where resources are deployed"
+            }
+        },
+        "webhookUrl": {
+            "type": "string",
+            "metadata": {
+                "description": "Webhook URL"
+            }
+        },
+        "eventGridSubscriptionName": {
+            "type": "string",
+            "metadata": {
+                "description": "Name of Event Grid Subscription"
+            }
+        }
+    },
+    "variables": {},
+    "resources": [
+        {
+            "apiVersion": "2018-01-01",
+            "type": "Microsoft.EventGrid/eventSubscriptions",
+            "name": "[parameters('eventGridSubscriptionName')]",
+            "location": "[parameters('location')]",
+            "properties": {
+                "destination": {
+                    "endpointType": "Webhook",
+                    "properties": {
+                        "endpointUrl": "[parameters('webhookUrl')]"
+                    }
+                },
+                "filter": {
+                    "subjectBeginsWith": "",
+                    "subjectEndsWith": "",
+                    "isSubjectCaseSensitive": false,
+                    "includedEventTypes": [
+                        "Microsoft.Resources.ResourceActionCancel",
+                        "Microsoft.Resources.ResourceActionFailure",
+                        "Microsoft.Resources.ResourceActionSuccess",
+                        "Microsoft.Resources.ResourceDeleteCancel",
+                        "Microsoft.Resources.ResourceDeleteFailure",
+                        "Microsoft.Resources.ResourceDeleteSuccess",
+                        "Microsoft.Resources.ResourceWriteCancel",
+                        "Microsoft.Resources.ResourceWriteFailure",
+                        "Microsoft.Resources.ResourceWriteSuccess"
+                      ]
+                }
+            }
+        }
+    ],
+    "outputs": {}
+}
