@@ -45,20 +45,7 @@ namespace AzureEventsDemo.Functions
                 }
                 else
                 {
-                    var requestObject = new AzureEventEntity
-                    {
-                        PartitionKey = "TODO",
-                        RowKey = (string)eventGridEvent["id"],
-                        ResourceProvider = (string)eventGridEvent["data"]["resourceProvider"],
-                        ResourceUri = (string)eventGridEvent["data"]["resourceUri"],
-                        EventTime = (DateTime?)eventGridEvent["eventTime"],
-                        Emailaddress = (string)eventGridEvent["data"]["claims"]["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"],
-                        Name = (string)eventGridEvent["data"]["name"],
-                        Oid = (string)eventGridEvent["data"]["claims"]["http://schemas.microsoft.com/identity/claims/objectidentifier"],
-                        OperationName = (string)eventGridEvent["data"]["operationName"],
-                        Status = (string)eventGridEvent["data"]["status"]
-                    };
-
+                    var requestObject = AzureEventEntity.Parse(eventGridEvent);
                     await table.AddAsync(requestObject);
                 }
             }
